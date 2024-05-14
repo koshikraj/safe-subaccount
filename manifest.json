@@ -1,7 +1,7 @@
 {
-  "short_name": "SafeValidator App",
-  "name": "SafeValidator App",
-  "description": "A 7579 validator demo for Safe Accounts",
+  "short_name": "SafeSub App",
+  "name": "SafeSub App",
+  "description": "Sub Account for Safe Accounts",
   "iconPath": "logo192.png",
   "icons": [
     {
