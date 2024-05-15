@@ -1,8 +1,8 @@
 {
-  "name": "@safe-global/safe-4337",
-  "version": "0.3.0",
-  "description": "Safe Module for ERC-4337 support",
-  "homepage": "https://github.com/safe-global/safe-modules/tree/main/modules/4337",
+  "name": "safesub-module",
+  "version": "1.0.0",
+  "description": "Safe Module for Sub Account with erc7579 support",
+  "homepage": "https://github.com/koshikraj/safesub/tree/main/modules",
   "license": "GPL-3.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -54,10 +54,12 @@
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-foundry": "^1.1.1",
+    "@nomicfoundation/hardhat-ignition": "^0.15.4",
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.1",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.6",
+    "@nomicfoundation/ignition-core": "^0.15.4",
     "@openzeppelin/contracts": "^4.9.2",
     "@safe-global/safe-4337-local-bundler": "^0.0.0",
     "@safe-global/safe-4337-provider": "^0.0.0",
@@ -89,11 +91,7 @@
     "typescript": "^5.4.3",
     "yargs": "^17.7.2"
   },
-  "overrides": {
-    "@safe-global/safe-contracts": {
-      "ethers": "^6.11.1"
-    }
-  },
+
   "dependencies": {
     "@rhinestone/modulekit": "^0.3.7",
     "@safe-global/safe-contracts": "^1.4.1-build.0",

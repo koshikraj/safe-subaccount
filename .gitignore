@@ -1,0 +1,17 @@
+build/
+node_modules/
+.DS_Store
+.zos.session
+.openzeppelin/.session
+deployments/
+env/
+.vite/
+dist/
+.env
+bin/
+solc
+coverage/
+coverage.json
+yarn-error.log
+typechain-types/
+.certora_internal
