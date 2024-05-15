@@ -130,3 +130,9 @@ export function formatTime(seconds: number) {
 
   return `${days ? days + " days, " : ""} ${hours ? hours + " hours, "  : ""} ${ minutes ? minutes + " mins, " : ""} ${remainingSeconds + " secs"}`;
 }
+
+
+export function fixDecimal(number: string, decimals: number) {
+
+    return parseFloat(number).toFixed(decimals).replace(/\.?0+$/, '');;
+  }

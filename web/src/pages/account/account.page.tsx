@@ -3,7 +3,7 @@ import classes from './account.module.css';
 import { useEffect, useState } from 'react';
 import useLinkStore from '@/store/link/link.store';
 import { formatEther, parseEther, parseUnits, ZeroAddress } from 'ethers';
-import { buildTransferToken, formatTime, getTokenBalance, getTokenDecimals, publicClient } from '@/logic/utils';
+import { buildTransferToken, fixDecimal, formatTime, getTokenBalance, getTokenDecimals, publicClient } from '@/logic/utils';
 import { createUser, loginUser } from '@/logic/auth';
 import { useDisclosure } from '@mantine/hooks';
 import { Icon2fa, IconAddressBook, IconAlertCircle, IconBrandGoogle, IconBug, IconCheck, IconChevronDown, IconClock, IconCoin, IconConfetti, IconCopy, IconCross, IconDownload, IconError404, IconGif, IconGift, IconHomeDown, IconSend, IconShieldCheck, IconTransferOut, IconUserCheck } from '@tabler/icons';
@@ -224,8 +224,7 @@ export const AccountPage = () => {
       } else {
       setBalance(await getTokenBalance(value, claimDetails?.account?.address , provider))
       }
-    
-    console.log('hello');
+
     setBalanceLoading(false);
   
   }
@@ -705,7 +704,7 @@ export const AccountPage = () => {
                       </Combobox>
 
 
-          <p className={classes.balance}>  { balanceLoading ? <Skeleton height={20} width={110} mt={6} radius="xl" /> : `${balance} ${getTokenInfo(chainId, ZeroAddress).label}` }   </p>
+          <p className={classes.balance}>  { balanceLoading ? <Skeleton height={20} width={110} mt={6} radius="xl" /> : `${fixDecimal(balance, 4)} ${getTokenInfo(chainId, ZeroAddress).label}` }   </p>
           
           <Paper radius="md" withBorder className={classes.card} mt={20}>
       <Text ta="center" fw={700} className={classes.title}>
