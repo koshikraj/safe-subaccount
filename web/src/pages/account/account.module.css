@@ -13,6 +13,7 @@
 
 
 .formContainer{
+  max-width: 600px;
   padding: 20px;
   display: flex;
   align-items: center;

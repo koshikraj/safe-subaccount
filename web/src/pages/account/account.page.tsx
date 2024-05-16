@@ -1,12 +1,12 @@
-import { Text, ActionIcon, Alert, Anchor, Avatar, Badge, Button, CopyButton, Divider, Input, Modal, Paper, Popover, rem, Tooltip, InputBase, Combobox, useCombobox, Group, TextInput, Skeleton, Stepper, Timeline, Code, ThemeIcon, Progress } from '@mantine/core';
+import { Text, ActionIcon, Alert, Anchor, Avatar, Badge, Button, CopyButton, Divider, Input, Modal, Paper, Popover, rem, Tooltip, InputBase, Combobox, useCombobox, Group, TextInput, Skeleton, Stepper, Timeline, Code, ThemeIcon, Progress, Stack } from '@mantine/core';
 import classes from './account.module.css';
 import { useEffect, useState } from 'react';
-import useLinkStore from '@/store/link/link.store';
+import useLinkStore from '@/store/account/account.store';
 import { formatEther, parseEther, parseUnits, ZeroAddress } from 'ethers';
-import { buildTransferToken, fixDecimal, formatTime, getTokenBalance, getTokenDecimals, publicClient } from '@/logic/utils';
+import { buildTransferToken, fixDecimal, formatTime, getTokenBalance, getTokenDecimals, passkeyHttpClient, publicClient } from '@/logic/utils';
 import { createUser, loginUser } from '@/logic/auth';
 import { useDisclosure } from '@mantine/hooks';
-import { Icon2fa, IconAddressBook, IconAlertCircle, IconBrandGoogle, IconBug, IconCheck, IconChevronDown, IconClock, IconCoin, IconConfetti, IconCopy, IconCross, IconDownload, IconError404, IconGif, IconGift, IconHomeDown, IconSend, IconShieldCheck, IconTransferOut, IconUserCheck } from '@tabler/icons';
+import {  IconBug, IconCheck, IconChevronDown, IconClock, IconCoin, IconConfetti, IconCopy, IconCross, IconDownload, IconError404, IconGif, IconGift, IconHomeDown, IconSend, IconShieldCheck, IconTransferOut, IconUserCheck } from '@tabler/icons';
 import { NetworkUtil } from '@/logic/networks';
 import Confetti from 'react-confetti';
 import { getIconForId, getTokenInfo, getTokenList, tokenList } from '@/logic/tokens';
@@ -14,47 +14,52 @@ import { getJsonRpcProvider } from '@/logic/web3';
 
 import {usePrivy, useWallets} from '@privy-io/react-auth';
 import { getSessionData, sendTransaction, waitForExecution } from '@/logic/module';
-import { EIP1193Provider, createWalletClient, custom } from 'viem';
+import { EIP1193Provider, LocalAccount, WalletClient, createWalletClient, custom } from 'viem';
 import { sepolia } from 'viem/chains';
-import { loadAccountInfo, storeAccountInfo } from '@/utils/storage';
-import { IconAlertCircleFilled, IconBrandGoogleFilled, IconCircleCheckFilled } from '@tabler/icons-react';
+import { loadWalletInfo, storeWalletInfo } from '@/utils/storage';
 
 import Google from '../../assets/icons/google.svg';
 import Metamask from '../../assets/icons/metamask.svg';
-import Twitter from '../../assets/icons/twitter.jpg';
+import WC from '../../assets/icons/wc.svg';
+import Coinbase from '../../assets/icons/coinbase.svg';
+import Twitter from '../../assets/icons/twitter.svg';
+import Passkey from '../../assets/icons/passkey.svg';
+import { createAccount } from '@turnkey/viem';
 
 
 
 
 export const AccountPage = () => {
 
-   const { login, logout, user, authenticated, createWallet } = usePrivy();
+   const { login, logout, user, authenticated, createWallet, connectWallet } = usePrivy();
 
    const { wallets, ready} = useWallets();
   
-  const { claimDetails, setClaimDetails, setConfirming, confirming} = useLinkStore((state: any) => state);
+  const { authDetails, setAuthDetails, chainId, setChainId, setConfirming, confirming} = useLinkStore((state: any) => state);
   const [ balance, setBalance ] = useState<any>(0);
   const [opened, { open, close }] = useDisclosure(false);
   const [sendModal, setSendModal] = useState(false);
   const [tokenValue, setTokenValue] = useState(0);
+
+  const [walletName, setWalletName] = useState('');
   const [sendAddress, setSendAddress] = useState('');
   const [sendSuccess, setSendSuccess] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [sendLoader, setSendLoader] = useState(false);
-  const [safeAccount, setSafeAccount] = useState<string>('');
   const [userDetails, setUserDetails] = useState({name:'', wallet:'', type: 'wallet'});
-  const [ authenticating, setAuthenticating ] = useState(false);
-  const [ refreshing, setRefreshing ] = useState(false);
+  const [refreshing, setRefreshing ] = useState(false);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [chainId, setChainId] = useState<number>(claimDetails.chainId);
   const [value, setValue] = useState<string>("0x0000000000000000000000000000000000000000");
-  const [walletProvider, setWalletProvider] = useState<EIP1193Provider>();
-  const [sessionLoading, setSessionLoading] = useState(true);
+  const [walletProvider, setWalletProvider] = useState<WalletClient | LocalAccount>();
+  const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionKeyActive, setSessionKeyActive] = useState(false);
   const [limitAmount, setLimitAmount] = useState(''); 
   const [availableLimit, setAvailableLimit] = useState(0);
   const [refreshIn, setRefreshIn] = useState<bigint>(0n);
   const [error, setError ] = useState('');
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [passkeyAuth, setPasskeyAuth] = useState(false);
+  const [authenticating, setAuthenticating] = useState(false);
   const [validTill, setValidTill] = useState(0);
   const [validAfter, setValidAfter] = useState(0);  
 
@@ -177,7 +182,7 @@ export const AccountPage = () => {
             parseAmount = 0n;
             toAddress = value;
         }
-    const result = await sendTransaction(chainId.toString(), toAddress, parseAmount, walletProvider)
+    const result = await sendTransaction(chainId.toString(), toAddress, parseAmount, walletProvider, userDetails.wallet)
     if (!result)
     setSendSuccess(false);
     else {
@@ -200,8 +205,9 @@ export const AccountPage = () => {
   }
 
   async function fetchSessionData(address: string) {
-    const {validAfter, validUntil, limitAmount, limitUsed, lastUsed, refreshInterval, account} = await getSessionData(chainId.toString(), address, ZeroAddress);
 
+    setSessionLoading(true);
+    const {validAfter, validUntil, limitAmount, limitUsed, lastUsed, refreshInterval, account} = await getSessionData(chainId.toString(), address, ZeroAddress);
     const currentTime = Date.now();
     const availableLimit =  currentTime > (parseInt(refreshInterval)*1000 + parseInt(lastUsed)*1000) && parseInt(refreshInterval) ? limitAmount : (limitAmount - limitUsed);
 
@@ -209,20 +215,23 @@ export const AccountPage = () => {
     setValidAfter(parseInt(validAfter));
     setValidTill(parseInt(validUntil));
     setRefreshIn(lastUsed + refreshInterval - BigInt(Math.floor(currentTime/ 1000)))
-    setSessionKeyActive(currentTime < parseInt(validUntil)*1000 && currentTime > parseInt(validAfter)*1000);
+    const sessionActive = currentTime < parseInt(validUntil)*1000 && currentTime > parseInt(validAfter)*1000;
+
+    setSessionKeyActive(sessionActive);
+    setOnboardingStep(sessionActive ? 2 : 1)
+
     setLimitAmount(formatEther(limitAmount));
     setAvailableLimit(availableLimit);
-    setSafeAccount(account)
+    setAuthDetails({ account: account, chainId: chainId})
     setSessionLoading(false);
 
     setBalanceLoading(true);
     const provider = await getJsonRpcProvider(chainId.toString());
 
     if(value == ZeroAddress) {
-      console.log('hello');
       setBalance(formatEther(await provider.getBalance(account)))
       } else {
-      setBalance(await getTokenBalance(value, claimDetails?.account?.address , provider))
+      setBalance(await getTokenBalance(value, authDetails?.account?.address , provider))
       }
 
     setBalanceLoading(false);
@@ -233,40 +242,62 @@ export const AccountPage = () => {
   useEffect(() => {
     (async () => {
 
-      
-      login()
+
+
+      const wallet = loadWalletInfo();
+
+      if(wallet.address) {
+
+        const viemAccount = await createAccount({
+          client: passkeyHttpClient,
+          organizationId: wallet!.subOrgId,
+          signWith: wallet!.address,
+          ethereumAddress: wallet!.address,
+       });
+
+       setOnboardingStep(1);  
+       await fetchSessionData(wallet.address!);
+       setWalletProvider(viemAccount)
+
+
+      setUserDetails({wallet: wallet.address! , name: "", type: "passkey" })
+     
+
+
+      }
+
       if(wallets.length > 0 && user) {
         if(!user.wallet)
         await createWallet()
 
- 
-
-      setSessionLoading(true);
+      setOnboardingStep(1);  
 
       await fetchSessionData(user.wallet?.address!);
 
-
       const provider = await wallets[0].getEthereumProvider() as EIP1193Provider;
+
+      const walletClient = createWalletClient({
+        chain: sepolia,
+        transport: custom(provider),
+      })
     
-      setWalletProvider(provider)
-         
+      setWalletProvider(walletClient)
+ 
       const linkedAccount: any = user.linkedAccounts[0]
 
       const type = user.google ? 'google' : user.twitter? 'twitter' : 'wallet';
 
       setUserDetails({wallet: user.wallet?.address! , name: linkedAccount.name, type: type })
      
-  
-       }
-      if(!claimDetails.account) {
+      }
+      if(!authDetails.account) {
         open();
       }
       
-
       window.addEventListener('resize', () => setDimensions({ width: window.innerWidth, height: window.innerHeight }));
       
     })();
-  }, [claimDetails.account, chainId, sendSuccess, value, authenticated, ready, confirming, sendLoader, confirming]);
+  }, [ chainId, sendSuccess, value, ready, confirming, sendLoader, authenticated]);
 
 
   
@@ -277,31 +308,154 @@ export const AccountPage = () => {
   }
   return (
     <>
-    <Modal opened={opened} onClose={close} title="Authenticate your Account" centered>
+      <Modal opened={passkeyAuth} onClose={()=> setPasskeyAuth(false)} title="Authenticate your Account" centered>
 
 <div className={classes.formContainer}>
+      <div>
+        <h1 className={classes.heading}>Authenticate in one click with PassKey</h1>
+      </div>
+      <p className={classes.subHeading}>
+        Register using a new PassKey?
+      </p>
+      <div className={classes.accountInputContainer}>
+      
+       <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: '20px',
+            marginBottom: '20px',
+            alignItems: 'center',
+          }}
+        >
+        <Input.Wrapper >
+          <Input
+            type="text"
+            size="lg" 
+            value={walletName}
+            onChange={(event: any) => setWalletName(event.currentTarget.value)}
+            placeholder="Wallet Name"
+            className={classes.input}
+          />
+        </Input.Wrapper>
+    
+      <Button
+        type="button"
+        variant="outline"
+        size="lg" radius="md" 
+        fullWidth
+        color="green"
+        style={{
+          marginLeft: "20px"}}
+        onClick={ async() => { 
+          
+          
+        const wallet = await createUser(walletName)
+
+        const viemAccount = await createAccount({
+          client: passkeyHttpClient,
+          organizationId: wallet!.subOrgId,
+          signWith: wallet!.address,
+          ethereumAddress: wallet!.address,
+       });
+
+
+        setWalletProvider(viemAccount)
+        setOnboardingStep(1); 
+        setUserDetails({name:'', wallet: wallet!.address, type: 'passkey'})
+        setPasskeyAuth(false);
+        setAuthenticating(false); 
+        await fetchSessionData(wallet!.address);
+
+        
+
+        }}
+      
+      >
+      Create
+      </Button>
+      </div>
+
+      <Divider my="xs" label="OR" labelPosition="center" />
+
+      <p className={classes.subHeading}>
+       Already used a PassKey?
+      </p>
+
+        
+      <div
+          style={{
+            display: 'flex',
+            marginTop: '20px',
+            marginBottom: '20px',
+            alignItems: 'center',
+            justifyContent: 'center',
+
+          }}
+        >
+          
+      <Button
+        size="lg" radius="md" 
+        type="button"
+        fullWidth
+        color="green"
+        className={classes.btn}
+        loaderProps={{ color: 'white', type: 'dots', size: 'md' }}
+        onClick={ async() => { 
+          
+        setAuthenticating(true); 
+          
+        try {  
+        const wallet =  await loginUser()
+        storeWalletInfo(wallet!);
+
+
+
+
+        const viemAccount = await createAccount({
+          client: passkeyHttpClient,
+          organizationId: wallet!.subOrgId,
+          signWith: wallet!.address,
+          ethereumAddress: wallet!.address,
+       });
+
+
+        setWalletProvider(viemAccount)
+        setOnboardingStep(1); 
+        setUserDetails({name:'', wallet: wallet!.address, type: 'passkey'})
+        setPasskeyAuth(false);
+        setAuthenticating(false); 
+        fetchSessionData(wallet!.address);
+
+
+        } 
+        catch(e) {
+          setAuthenticating(false);
+        }
+        }}
+        loading={ authenticating}
+      >
+      Login
+      </Button>
+      </div>   
+      </div>
+    </div>
+  
+</Modal>
+
+  <Modal  overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 7}} size={600} opened={opened && !passkeyAuth} onClose={close} title="Authenticate your Account" centered>
+
+  <div className={classes.formContainer} >
       <div>
         <h1 className={classes.heading}>Sub Account for your Safe</h1>
       </div>
 
-      {/* { !sessionLoading && sessionKeyActive && 
-     <Alert variant="light" color="green" radius="md" title="" icon={<IconCircleCheckFilled />}>
-        <b>  This account is valid till</b> <br/>
-        {`${(new Date(validTill*1000).toDateString())} ${(new Date(validTill*1000).toLocaleTimeString())}`}
-    </Alert> } */}
 
-  { sessionLoading && <>
-      <Skeleton style={{marginBottom: '10px'}} height={20} width={200} mt={6} radius="xl" /> 
-          <Skeleton style={{marginBottom: '20px'}} height={20} width={200} mt={6} radius="xl" /> 
-          <Skeleton style={{marginBottom: '20px'}} height={40} width={150} mt={6} radius="md" />
-       </>
-      }
-
-
-  
       <div className={classes.accountInputContainer}>
-      {!sessionLoading && <Timeline
-      active={sessionKeyActive ? 1 : 0} 
+      {<Timeline
+      active={onboardingStep} 
       bulletSize={30} 
       lineWidth={1}
       color='green'
@@ -312,21 +466,20 @@ export const AccountPage = () => {
       
       >
 
-      <Group
+      { onboardingStep >= 1 && <Group
+        
           style={{
             display: 'flex',
             marginTop: '20px',
             gap: '20px',
             marginBottom: '20px',
             alignItems: 'center',
-            // justifyContent: 'center',
-
           }}
         >
 
       <Group wrap="nowrap">
         <Avatar
-          src={userDetails.type == 'google' ? Google : userDetails.type == 'twitter' ? Twitter : Metamask}
+          src={userDetails.type == 'google' ? Google : userDetails.type == 'twitter' ? Twitter : userDetails.type =="passkey" ? Passkey : Metamask}
           size={50}
           radius="md"
         />
@@ -366,28 +519,59 @@ export const AccountPage = () => {
         color="red"
         loaderProps={{ color: 'white', type: 'dots', size: 'md' }}
         onClick={ async() => {  
-          setAuthenticating(true); 
         try { 
           logout();
-          setAuthenticating(false);
+          storeWalletInfo({});
+          setOnboardingStep(0);
         } 
         catch(e) {
-          setAuthenticating(false);
         }
         }}
-        loading={ authenticating}
        >
       Disconnect
       </Button>
 
+      </Group> }
+
+      { onboardingStep == 0 &&
+      <Stack>
+      <Text fz="sm" fw={500} className={classes.name}  c="dimmed">
+        Authenticate with any of the below methods
+        </Text>
+        <Group>
+      <Button size='lg' variant="default" radius='md' onClick={ ()=> setPasskeyAuth(true)}>
+      <Avatar src={Passkey} size='md'  />
+      </Button>
+
+      <Button size='lg'  variant="default" onClick={login} radius='md'>
+      <Avatar.Group >
+      <Avatar src={Google}  />
+      <Avatar src={Twitter} />
+      </Avatar.Group>
+      </Button>
+
+      <Button size='lg' variant="default" radius='md' onClick={connectWallet}>
+      <Avatar.Group >
+      <Avatar src={Metamask}  />
+      <Avatar src={WC} />
+      </Avatar.Group>
+      </Button>
+
+
       </Group>
+      </Stack> }
+
+
+ 
 
       </Timeline.Item>
       <Timeline.Item
         bullet={<IconShieldCheck style={{ width: rem(18), height: rem(18) }} />}
         title="Connect Safe Account"
       >
-          { !sessionLoading && sessionKeyActive && 
+
+  
+          { onboardingStep == 2 && 
 
 
             <Group
@@ -423,14 +607,14 @@ export const AccountPage = () => {
                  )}
                </CopyButton>
                <Text fz="lg" c="dimmed">
-               {shortenAddress(safeAccount)}
+               {shortenAddress(authDetails.account)}
                </Text>
              </Group>
          </Group>
          </Group>
           }
 
-          { !sessionLoading && !sessionKeyActive && 
+          { !sessionKeyActive && onboardingStep==1 && 
           
         <div>
 
@@ -458,7 +642,14 @@ export const AccountPage = () => {
           </CopyButton>
         </Group>
 
-            <Button
+        { sessionLoading && <>
+              <Skeleton style={{marginBottom: '10px'}} height={20} width={200} mt={6} radius="xl" /> 
+                  <Skeleton style={{marginBottom: '20px'}} height={20}  mt={6} radius="xl" /> 
+              </>
+              }
+
+
+          <Button
             size="sm" 
             radius="md" 
             variant="outline"
@@ -476,6 +667,8 @@ export const AccountPage = () => {
           >
           Continue
           </Button>
+
+          
 
       </div>
 
@@ -502,25 +695,24 @@ export const AccountPage = () => {
         size="lg" 
         radius="md"         
         fullWidth
-        className={sessionKeyActive ? classes.btn : ""}
-        disabled={!sessionKeyActive}
+        className={onboardingStep < 2 ?  "" : classes.btn}
+        disabled={onboardingStep < 2}
         loaderProps={{ color: 'white', type: 'dots', size: 'md' }}
         onClick={ async() => { 
           
         try {  
 
-        setClaimDetails({ account: safeAccount, amount: 0, chainId: chainId})
         close();
         } 
         catch(e) {
-          setAuthenticating(false);
         }
    
         }}
-        loading={ authenticating}
       >
       Continue
       </Button>
+
+
       </div>   
       </div>
     </div>
@@ -648,9 +840,9 @@ export const AccountPage = () => {
             width={100}
           />
            <div className={classes.balanceContainer}>
-         <Anchor href={`${NetworkUtil.getNetworkById(chainId)?.blockExplorer}/address/${safeAccount}`} target="_blank" underline="hover">  <p> { shortenAddress( safeAccount ? safeAccount : ZeroAddress)}</p>
+         <Anchor href={`${NetworkUtil.getNetworkById(chainId)?.blockExplorer}/address/${authDetails.account}`} target="_blank" underline="hover">  <p> { shortenAddress( authDetails.account ? authDetails.account : ZeroAddress)}</p>
           </Anchor>
-          <CopyButton value={safeAccount} timeout={1000}>
+          <CopyButton value={authDetails.account} timeout={1000}>
               {({ copied, copy }) => (
                 <Tooltip label={copied ? 'Copied' : 'Copy'} withArrow position="right">
                   <ActionIcon color={copied ? 'teal' : 'gray'} variant="subtle" onClick={copy}>
@@ -760,7 +952,6 @@ export const AccountPage = () => {
         </div>
       </div>
     </Paper>
-    {  Boolean(claimDetails.amount) && <Confetti width={dimensions.width} height={dimensions.height} /> }
     </>
   );
 };

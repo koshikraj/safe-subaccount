@@ -72,24 +72,13 @@ export async function signAddress(string: string, privateKey: string) {
 }
 
 
-export const sendTransaction = async (chainId: string, recipient: string, amount: bigint, walletProvider: any): Promise<any> => {
+export const sendTransaction = async (chainId: string, recipient: string, amount: bigint, walletProvider: any, walletAddress: string): Promise<any> => {
 
-    const provider = await getProvider()
-
-
-    console.log(walletProvider.address)
-
-    const walletClient = createWalletClient({
-        chain: sepolia,
-        transport: custom(walletProvider),
-      })
-      
-
-
+  
     const bProvider = await getJsonRpcProvider(chainId)
 
 
-    const { account } = await getSessionData(chainId, walletProvider.address, ZeroAddress)
+    const { account } = await getSessionData(chainId, walletAddress, ZeroAddress)
 
     console.log(account)
 
@@ -98,7 +87,7 @@ export const sendTransaction = async (chainId: string, recipient: string, amount
         'function execute(address sessionKey, address to, uint256 value, bytes calldata data) external',
       ]
 
-    const execCallData = new Interface(abi).encodeFunctionData('execute', [walletProvider.address, recipient, amount, '0x' as Hex])
+    const execCallData = new Interface(abi).encodeFunctionData('execute', [walletAddress, recipient, amount, '0x' as Hex])
 
 
     console.log(execCallData)
@@ -175,14 +164,10 @@ export const sendTransaction = async (chainId: string, recipient: string, amount
         ...sponsorUserOperationResult,
     }
 
-
     let typedDataHash = getBytes(await entryPoint.getUserOpHash(getPackedUserOperation(sponsoredUserOperation)))
 
-
-    console.log(sponsoredUserOperation)
-
  
-    sponsoredUserOperation.signature = await walletClient.signMessage({account: walletProvider.address , message:  { raw: typedDataHash}}) as `0x${string}`
+    sponsoredUserOperation.signature = await walletProvider.signMessage({account: walletAddress , message:  { raw: typedDataHash}}) as `0x${string}`
 
 
     const userOperationHash = await bundlerClient.sendUserOperation({

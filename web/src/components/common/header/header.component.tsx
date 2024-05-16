@@ -22,7 +22,7 @@ import Gnosis from '../../../assets/icons/gno.svg';
 import { RoutePath } from '../../../navigation/route-path';
 import { NetworkUtil } from '../../../logic/networks';
 
-import useLinkStore from '../../../store/link/link.store';
+import useLinkStore from '../../../store/account/link.store';
 import { getProvider } from '../../../logic/web3';
 import classes from './header.component.module.css';
 import { IconBrandTwitterFilled } from '@tabler/icons-react';

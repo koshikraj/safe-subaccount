@@ -1,11 +1,11 @@
-export const storeAccountInfo = (address: string) => {
+export const storeWalletInfo = (wallet: Object) => {
 
-    localStorage.setItem('account', JSON.stringify({address: address}));
+    localStorage.setItem('wallet', JSON.stringify(wallet));
 }
 
 
-export const loadAccountInfo = (): any => {
+export const loadWalletInfo = (): any => {
 
-    const accountInfo = localStorage.getItem('account');
+    const accountInfo = localStorage.getItem('wallet');
     return accountInfo ? JSON.parse(accountInfo) : {};
 }
