@@ -1,4 +1,4 @@
-import { MultiProvider4337, RpcProvider } from '@safe-global/safe-4337-provider'
+// import { MultiProvider4337, RpcProvider } from '@safe-global/safe-4337-provider'
 import { Provider, Signer, ethers } from 'ethers'
 
 // Import from Safe contracts repo once it is upgraded to ethers v6 and can be installed via npm

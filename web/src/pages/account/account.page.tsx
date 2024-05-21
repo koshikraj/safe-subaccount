@@ -31,7 +31,7 @@ import { createAccount } from '@turnkey/viem';
 
 export const AccountPage = () => {
 
-   const { login, logout, user, authenticated, createWallet, connectWallet } = usePrivy();
+   const { login, logout, user, authenticated, createWallet, connectWallet} = usePrivy();
 
    const { wallets, ready} = useWallets();
   
@@ -243,27 +243,28 @@ export const AccountPage = () => {
     (async () => {
 
 
-
       const wallet = loadWalletInfo();
 
-      if(wallet.address) {
-
-        const viemAccount = await createAccount({
-          client: passkeyHttpClient,
-          organizationId: wallet!.subOrgId,
-          signWith: wallet!.address,
-          ethereumAddress: wallet!.address,
-       });
-
-       setOnboardingStep(1);  
-       await fetchSessionData(wallet.address!);
-       setWalletProvider(viemAccount)
 
 
-      setUserDetails({wallet: wallet.address! , name: "", type: "passkey" })
+      if(wallets.length > 0 && !user) {
+
+      setOnboardingStep(1);  
+
+      await fetchSessionData(wallets[0].address);
+
+      const provider = await wallets[0].getEthereumProvider() as EIP1193Provider;
+
+      const walletClient = createWalletClient({
+        chain: sepolia,
+        transport: custom(provider),
+      })
+    
+      setWalletProvider(walletClient)
+ 
+
+      setUserDetails({wallet: wallets[0].address , name: "", type: 'wallet' })
      
-
-
       }
 
       if(wallets.length > 0 && user) {
@@ -290,6 +291,26 @@ export const AccountPage = () => {
       setUserDetails({wallet: user.wallet?.address! , name: linkedAccount.name, type: type })
      
       }
+
+      if(wallet.address) {
+
+        const viemAccount = await createAccount({
+          client: passkeyHttpClient,
+          organizationId: wallet!.subOrgId,
+          signWith: wallet!.address,
+          ethereumAddress: wallet!.address,
+       });
+
+       setOnboardingStep(1);  
+       await fetchSessionData(wallet.address!);
+       setWalletProvider(viemAccount)
+
+
+      setUserDetails({wallet: wallet.address! , name: "", type: "passkey" })
+     
+
+      }
+
       if(!authDetails.account) {
         open();
       }
@@ -297,7 +318,7 @@ export const AccountPage = () => {
       window.addEventListener('resize', () => setDimensions({ width: window.innerWidth, height: window.innerHeight }));
       
     })();
-  }, [ chainId, sendSuccess, value, ready, confirming, sendLoader, authenticated]);
+  }, [ chainId, sendSuccess, value, ready, confirming, sendLoader, authenticated, wallets]);
 
 
   
@@ -367,6 +388,8 @@ export const AccountPage = () => {
         setAuthenticating(false); 
         await fetchSessionData(wallet!.address);
 
+        storeWalletInfo(wallet!);
+
         
 
         }}
@@ -407,10 +430,6 @@ export const AccountPage = () => {
           
         try {  
         const wallet =  await loginUser()
-        storeWalletInfo(wallet!);
-
-
-
 
         const viemAccount = await createAccount({
           client: passkeyHttpClient,
@@ -426,6 +445,8 @@ export const AccountPage = () => {
         setPasskeyAuth(false);
         setAuthenticating(false); 
         fetchSessionData(wallet!.address);
+
+        storeWalletInfo(wallet!);
 
 
         } 

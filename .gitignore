@@ -8,7 +8,6 @@ env/
 .vite/
 dist/
 .env
-bin/
 solc
 coverage/
 coverage.json

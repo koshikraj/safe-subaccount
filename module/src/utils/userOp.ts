@@ -1,7 +1,6 @@
-import { UserOperation } from '@safe-global/safe-4337-provider'
+// import { UserOperation } from '@safe-global/safe-4337-provider'
 import { BigNumberish, BytesLike, Contract, Signer, ethers } from 'ethers'
 import { PackedUserOperationStruct as PackedUserOperation } from '../../typechain-types/contracts/Safe7579'
-import { SafeSignature } from './execution'
 
 import {
   Address,
@@ -14,7 +13,7 @@ import {
 } from "viem";
 import AccountInterface from "./abis/Account.json";
 
-export { PackedUserOperation, UserOperation }
+export { PackedUserOperation }
 
 export type SafeUserOperation = {
   safe: string

@@ -182,13 +182,13 @@ function HomePage() {
       <div className={classes.homeContainer}>
     <Paper className={classes.formContainer} shadow="md" withBorder radius="md" p="xl" >
         { !Object.keys(tokenList).includes(chainId.toString()) && <Alert variant="light" color="yellow" radius="lg" title="Unsupported Network">
-      Safe SpendLimit App supports only these networks as of now <b> : <br/> {Object.keys(tokenList).map((chainId) => `${NetworkUtil.getNetworkById(Number(chainId))?.name} ${NetworkUtil.getNetworkById(Number(chainId))?.type}, `)} </b>
+      Safe Sub account App supports only these networks as of now <b> : <br/> {Object.keys(tokenList).map((chainId) => `${NetworkUtil.getNetworkById(Number(chainId))?.name} ${NetworkUtil.getNetworkById(Number(chainId))?.type}, `)} </b>
     </Alert> }
 
     { safeError && <Alert variant="light" color="yellow" radius="lg" title="Open as Safe App">
 
      Try this application as a <span/>
-      <Anchor href="https://app.safe.global/share/safe-app?appUrl=https://7579-spendlimit.zenguard.xyz&chain=sep">
+      <Anchor href="https://app.safe.global/share/safe-app?appUrl=https://safesub.zenguard.xyz&chain=sep">
       Safe App
         </Anchor> <span/>
         on Safe Wallet.
@@ -436,7 +436,7 @@ function HomePage() {
             <IconBrandGithub
             size={30}
             stroke={1.5}
-            onClick={() => window.open("https://github.com/koshikraj/spendlimit-session")}
+            onClick={() => window.open("https://github.com/koshikraj/safesub")}
             style={{ cursor: 'pointer' }}
             />
 

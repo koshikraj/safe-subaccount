@@ -94,6 +94,7 @@
 
   "dependencies": {
     "@rhinestone/modulekit": "^0.3.7",
+    "@rhinestone/safe7579": "github:rhinestonewtf/safe7579",
     "@safe-global/safe-contracts": "^1.4.1-build.0",
     "forge-std": "github:foundry-rs/forge-std",
     "viem": "^2.9.31"
