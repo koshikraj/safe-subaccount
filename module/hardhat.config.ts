@@ -41,6 +41,7 @@ const soliditySettings = SOLIDITY_SETTINGS
   ? JSON.parse(SOLIDITY_SETTINGS)
   : {
       evmVersion: 'paris',
+      viaIR: true,
       optimizer: {
         enabled: true,
         runs: 1000,
@@ -64,8 +65,17 @@ const userConfig: HardhatUserConfig = {
     sources: 'contracts',
   },
   solidity: {
-    version: solidityVersion,
-    settings: soliditySettings,
+    compilers: [
+      {
+        version: "0.8.21",
+        settings: soliditySettings,
+
+      },
+      {
+        version: solidityVersion,
+        settings: soliditySettings,
+      },
+    ],
   },
   networks: {
     localhost: {
@@ -92,6 +102,11 @@ const userConfig: HardhatUserConfig = {
     sepolia: {
       ...sharedNetworkConfig,
       url: `https://sepolia.infura.io/v3/${INFURA_KEY}`,
+      tags: ['dev', 'entrypoint'],
+    },
+    basesepolia: {
+      ...sharedNetworkConfig,
+      url: `https://base-sepolia.g.alchemy.com/v2/wRVILABVfp0WrfAv449B23mIW_SJqOwL`,
       tags: ['dev', 'entrypoint'],
     },
     amoy: {

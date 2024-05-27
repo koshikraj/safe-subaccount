@@ -15,3 +15,7 @@ solarray/=node_modules/solarray/src/
 erc4337-validation/=node_modules/erc4337-validation/src/
 modulekit/=node_modules/@rhinestone/modulekit/packages/modulekit/src/
 safe7579=node_modules/@rhinestone/safe7579/src/
+
+openzeppelin-contracts/=node_modules/@openzeppelin/
+kernel/=node_modules/kernel/src/
+solady/=lib/kernel/lib/solady/src/

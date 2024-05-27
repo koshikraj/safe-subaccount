@@ -14,7 +14,7 @@
     "build"
   ],
   "scripts": {
-    "build": "npm run build:sol",
+    "build": "",
     "build:sol": "rimraf build typechain-types && hardhat compile",
     "build:ts": "rimraf dist && tsc",
     "test": "hardhat test --deploy-fixture",
@@ -91,12 +91,12 @@
     "typescript": "^5.4.3",
     "yargs": "^17.7.2"
   },
-
   "dependencies": {
     "@rhinestone/modulekit": "^0.3.7",
     "@rhinestone/safe7579": "github:rhinestonewtf/safe7579",
     "@safe-global/safe-contracts": "^1.4.1-build.0",
     "forge-std": "github:foundry-rs/forge-std",
+    "kernel": "github:zerodevapp/kernel",
     "viem": "^2.9.31"
   }
 }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 import { ERC7579HookBase } from "./ERC7579HookBase.sol";
-import { IERC7579Account } from "../interfaces/IERC7579Account.sol";
+import { IERC7579Account } from "../safe7579/interfaces/IERC7579Account.sol";
 import { ExecutionLib, Execution } from "erc7579/lib/ExecutionLib.sol";
 import {
     ModeLib,

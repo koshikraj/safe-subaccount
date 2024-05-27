@@ -35,6 +35,7 @@
     "@turnkey/viem": "^0.4.4",
     "@turnkey/webauthn-stamper": "^0.4.3",
     "@types/node": "^20.10.4",
+    "@zerodev/passkey-validator": "^5.2.7",
     "axios": "^1.4.0",
     "buffer": "^6.0.3",
     "dayjs": "^1.11.10",

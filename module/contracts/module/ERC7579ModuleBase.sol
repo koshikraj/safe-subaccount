@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { IERC7579Module } from "../external/ERC7579.sol";
+import { IERC7579Module } from "../safe7579/external/ERC7579.sol";
 
 abstract contract ERC7579ModuleBase is IERC7579Module {
     uint256 constant TYPE_VALIDATOR = 1;

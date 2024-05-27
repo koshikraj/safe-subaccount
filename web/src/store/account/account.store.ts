@@ -17,12 +17,6 @@ const useLinkStore = create((set) => ({
     }));
   },
 
-  setClaimDetails: (details: object) => {
-    set((state: any) => ({
-      ...state,
-      claimDetails: details,
-    }));
-  },
 
   setWallet: (wallet: object) => {
     set((state: any) => ({
